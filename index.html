@@ -1,1 +1,231 @@
 
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sonia & David · Nuestra Boda</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold: #c9a84c; --gold-light: #e8d5a3; --gold-dark: #8b6914;
+      --cream: #f8f3e8; --cream-dark: #ede5d0; --stone: #6b5d4f;
+      --ink: #2c2416; --white: #fffdf7;
+    }
+    body { font-family: 'Cormorant Garamond', Georgia, serif; background-color: var(--cream); color: var(--ink); min-height: 100vh; overflow-x: hidden; }
+    body::before { content: ''; position: fixed; inset: 0; background-image: radial-gradient(ellipse at 20% 50%, rgba(201,168,76,0.08) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(139,105,20,0.06) 0%, transparent 50%); pointer-events: none; z-index: 0; }
+    .hero { position: relative; width: 100%; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 1.5rem 4rem; z-index: 1; }
+    .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, transparent, var(--gold), var(--gold-light), var(--gold), transparent); }
+    .ornament { display: flex; align-items: center; gap: 1rem; color: var(--gold); font-size: 1.1rem; letter-spacing: 0.2em; margin: 1.2rem 0; }
+    .ornament::before, .ornament::after { content: ''; flex: 1; height: 1px; max-width: 80px; background: linear-gradient(90deg, transparent, var(--gold)); }
+    .ornament::after { background: linear-gradient(90deg, var(--gold), transparent); }
+    .tag { font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.35em; color: var(--gold-dark); text-transform: uppercase; margin-bottom: 0.5rem; }
+    h1 { font-family: 'Cinzel', serif; font-size: clamp(2.4rem, 8vw, 4rem); font-weight: 600; color: var(--ink); letter-spacing: 0.05em; text-align: center; line-height: 1.15; }
+    h1 span { color: var(--gold-dark); }
+    .subtitle { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: clamp(1.1rem, 3vw, 1.4rem); color: var(--stone); text-align: center; margin-top: 0.5rem; font-weight: 300; }
+    .card { background: var(--white); border: 1px solid var(--gold-light); border-radius: 2px; padding: 2.5rem 2rem; width: 100%; max-width: 420px; margin-top: 2.5rem; position: relative; box-shadow: 0 8px 40px rgba(139,105,20,0.1), 0 2px 8px rgba(139,105,20,0.05); }
+    .card::before, .card::after { content: '✦'; position: absolute; color: var(--gold); font-size: 0.9rem; line-height: 1; }
+    .card::before { top: 10px; left: 14px; } .card::after { bottom: 10px; right: 14px; }
+    .card-title { font-family: 'Cinzel', serif; font-size: 0.75rem; letter-spacing: 0.3em; color: var(--gold-dark); text-align: center; text-transform: uppercase; margin-bottom: 1.8rem; }
+    .name-wrap { margin-bottom: 1.2rem; }
+    .name-wrap label { font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.2em; color: var(--gold-dark); text-transform: uppercase; display: block; margin-bottom: 0.4rem; }
+    .name-wrap input { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--gold-light); border-radius: 1px; background: var(--cream); font-family: 'Cormorant Garamond', serif; font-size: 1rem; color: var(--ink); outline: none; transition: border-color 0.2s; }
+    .name-wrap input:focus { border-color: var(--gold); }
+    .drop-zone { border: 1.5px dashed var(--gold-light); border-radius: 2px; padding: 2rem 1rem; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; position: relative; background: var(--cream); }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: var(--gold); background: rgba(201,168,76,0.05); }
+    .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .drop-icon { font-size: 2.2rem; margin-bottom: 0.6rem; display: block; }
+    .drop-text { font-size: 1rem; color: var(--stone); font-style: italic; }
+    .drop-hint { font-size: 0.8rem; color: var(--gold-dark); margin-top: 0.3rem; letter-spacing: 0.05em; }
+    #preview-wrap { display: none; margin-top: 1.2rem; text-align: center; }
+    #preview-wrap img { max-width: 100%; max-height: 180px; border-radius: 2px; border: 1px solid var(--gold-light); object-fit: cover; }
+    #preview-name { font-size: 0.8rem; color: var(--stone); margin-top: 0.4rem; font-style: italic; }
+    .btn { display: block; width: 100%; margin-top: 1.5rem; padding: 0.9rem 1rem; background: var(--gold-dark); color: var(--cream); border: none; border-radius: 1px; font-family: 'Cinzel', serif; font-size: 0.8rem; letter-spacing: 0.25em; text-transform: uppercase; cursor: pointer; transition: background 0.2s, transform 0.1s; }
+    .btn:hover { background: var(--gold); } .btn:active { transform: scale(0.98); }
+    .btn:disabled { background: var(--gold-light); cursor: not-allowed; color: var(--stone); }
+    #status { margin-top: 1.2rem; text-align: center; font-size: 1rem; min-height: 1.4rem; font-style: italic; color: var(--stone); transition: color 0.3s; }
+    #status.ok { color: #4a7c59; } #status.err { color: #993c1d; }
+    .progress-wrap { margin-top: 0.8rem; height: 2px; background: var(--cream-dark); border-radius: 1px; overflow: hidden; display: none; }
+    .progress-bar { height: 100%; width: 0%; background: var(--gold); transition: width 0.3s ease; }
+    #counter { margin-top: 2rem; text-align: center; font-size: 0.85rem; color: var(--gold-dark); letter-spacing: 0.1em; }
+    footer { position: relative; z-index: 1; text-align: center; padding: 2rem 1rem 3rem; font-size: 0.8rem; color: var(--gold-dark); letter-spacing: 0.1em; font-family: 'Cinzel', serif; }
+    footer::before { content: ''; display: block; width: 60px; height: 1px; background: var(--gold-light); margin: 0 auto 1.2rem; }
+    @media (max-width: 480px) { .card { padding: 2rem 1.2rem; margin-top: 2rem; } }
+  </style>
+</head>
+<body>
+  <section class="hero">
+    <p class="tag">Comparte el amor</p>
+    <h1>Sonia <span>&</span> David</h1>
+    <p class="subtitle">Nuestra Boda · Los mejores recuerdos se comparten</p>
+    <div class="ornament">✦</div>
+    <div class="card">
+      <p class="card-title">Sube tu foto de la boda</p>
+
+      <div class="name-wrap">
+        <label for="nameInput">Tu nombre</label>
+        <input type="text" id="nameInput" placeholder="Escribe tu nombre…" maxlength="50">
+      </div>
+
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept="image/*,video/mp4,video/quicktime,video/webm" multiple>
+        <span class="drop-icon">📸</span>
+        <p class="drop-text">Toca para elegir fotos o videos</p>
+        <p class="drop-hint">Múltiples archivos · Foto hasta 30 MB · Video hasta 100 MB</p>
+      </div>
+
+      <div id="preview-wrap">
+        <img id="preview-img" src="" alt="Vista previa">
+        <video id="preview-video" controls style="display:none; max-width:100%; max-height:180px; border-radius:2px; border:1px solid var(--gold-light);"></video>
+        <p id="preview-name"></p>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <button class="btn" id="uploadBtn" onclick="uploadPhoto()" disabled>
+        Compartir recuerdo
+      </button>
+      <div id="status"></div>
+    </div>
+    <div id="counter"></div>
+  </section>
+  <footer>Sonia &amp; David · 2026 · Con amor</footer>
+
+  <script>
+    // ── Endpoint real capturado del tráfico de red de pCloud ──
+    const UPLOAD_CODE = '8bTXZGJdEwkqetxSjJP7HKTpR9SLOBBX7';
+    const BASE_URL    = 'https://apimad1.pcloud.com/uploadtolink';
+    const MAX_VIDEO   = 100 * 1024 * 1024;
+    const MAX_PHOTO   =  30 * 1024 * 1024;
+
+    const fileInput    = document.getElementById('fileInput');
+    const nameInput    = document.getElementById('nameInput');
+    const uploadBtn    = document.getElementById('uploadBtn');
+    const statusEl     = document.getElementById('status');
+    const previewWrap  = document.getElementById('preview-wrap');
+    const previewImg   = document.getElementById('preview-img');
+    const previewVideo = document.getElementById('preview-video');
+    const previewName  = document.getElementById('preview-name');
+    const progressWrap = document.getElementById('progressWrap');
+    const progressBar  = document.getElementById('progressBar');
+    const counterEl    = document.getElementById('counter');
+
+    let uploadCount = parseInt(localStorage.getItem('boda_uploads') || '0');
+    if (uploadCount > 0) counterEl.textContent = `Has compartido ${uploadCount} archivo${uploadCount > 1 ? 's' : ''} 💛`;
+
+    fileInput.addEventListener('change', () => {
+      const files = Array.from(fileInput.files);
+      if (!files.length) return;
+
+      let hasError = false;
+      files.forEach(file => {
+        const isVideo = file.type.startsWith('video/');
+        const limit   = isVideo ? MAX_VIDEO : MAX_PHOTO;
+        const limitMB = isVideo ? '100 MB' : '30 MB';
+        if (file.size > limit) {
+          setStatus(`⚠ "${file.name}" supera el límite de ${limitMB}.`, 'err');
+          hasError = true;
+        }
+      });
+
+      if (hasError) { fileInput.value = ''; return; }
+
+      // Mostrar preview del primero + contador
+      const first   = files[0];
+      const isVideo = first.type.startsWith('video/');
+      const url     = URL.createObjectURL(first);
+      if (isVideo) {
+        previewImg.style.display = 'none';
+        previewVideo.style.display = 'block';
+        previewVideo.src = url;
+      } else {
+        previewVideo.style.display = 'none';
+        previewImg.style.display = 'block';
+        previewImg.src = url;
+      }
+      const total = files.reduce((s, f) => s + f.size, 0);
+      previewName.textContent = files.length > 1
+        ? `${files.length} archivos seleccionados · ${(total/1024/1024).toFixed(1)} MB total`
+        : `${first.name} · ${(first.size/1024/1024).toFixed(1)} MB`;
+      previewWrap.style.display = 'block';
+      uploadBtn.disabled = false;
+      setStatus('');
+    });
+
+    const zone = document.getElementById('dropZone');
+    zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file && (file.type.startsWith('image/') || file.type.startsWith('video/'))) {
+        const dt = new DataTransfer(); dt.items.add(file);
+        fileInput.files = dt.files;
+        fileInput.dispatchEvent(new Event('change'));
+      }
+    });
+
+    function setStatus(msg, type = '') { statusEl.textContent = msg; statusEl.className = type; }
+
+    async function uploadPhoto() {
+      const files = Array.from(fileInput.files);
+      if (!files.length) return;
+
+      const nombre = (nameInput.value.trim() || 'Invitado').replace(/[^a-zA-Z0-9]/g, '');
+      uploadBtn.disabled = true;
+      progressWrap.style.display = 'block';
+      setStatus(`Subiendo ${files.length} archivo${files.length > 1 ? 's' : ''}…`);
+
+      // pCloud siempre crea una subcarpeta por llamada — subimos todo en un FormData
+      // con nopartial=1 para asegurar que se completen
+      const ts   = new Date().toISOString().replace(/[^0-9]/g, '').slice(0,14);
+      const url  = `${BASE_URL}?code=${UPLOAD_CODE}&nopartial=1`;
+      const form = new FormData();
+
+      files.forEach((file, i) => {
+        const isVideo = file.type.startsWith('video/');
+        const prefix  = isVideo ? 'video' : 'foto';
+        const ext     = file.name.split('.').pop().replace(/[^a-zA-Z0-9]/g, '') || 'jpg';
+        // Nombre: NombreInvitado_foto_timestamp_i.jpg
+        const safeName = `${nombre}_${prefix}_${ts}_${i}.${ext}`;
+        form.append('file', new File([file], safeName, { type: file.type }));
+      });
+
+      progressBar.style.width = '50%';
+
+      try {
+        const res  = await fetch(url, { method: 'POST', body: form });
+        const data = await res.json();
+        progressBar.style.width = '100%';
+
+        if (data.result === 0) {
+          uploadCount += files.length;
+          localStorage.setItem('boda_uploads', uploadCount);
+          counterEl.textContent = `Has compartido ${uploadCount} archivo${uploadCount > 1 ? 's' : ''} 💛`;
+          setStatus(`✦ ¡${files.length} archivo${files.length>1?'s':''} compartido${files.length>1?'s':''}! ¡Gracias! ✦`, 'ok');
+          setTimeout(() => {
+            fileInput.value = '';
+            nameInput.value = '';
+            previewWrap.style.display  = 'none';
+            progressWrap.style.display = 'none';
+            progressBar.style.width    = '0%';
+            uploadBtn.disabled = true;
+            setStatus('');
+          }, 3000);
+        } else {
+          setStatus(`Error ${data.result}: ${data.error || 'inténtalo de nuevo'}`, 'err');
+          uploadBtn.disabled = false;
+          progressWrap.style.display = 'none';
+        }
+      } catch (e) {
+        setStatus('Error de conexión. Verifica tu red.', 'err');
+        uploadBtn.disabled = false;
+        progressWrap.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>
