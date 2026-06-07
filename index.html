@@ -68,10 +68,10 @@
       </div>
 
       <div class="drop-zone" id="dropZone">
-        <input type="file" id="fileInput" accept="image/*,video/mp4,video/quicktime,video/webm">
+        <input type="file" id="fileInput" accept="image/*,video/mp4,video/quicktime,video/webm" multiple>
         <span class="drop-icon">📸</span>
-        <p class="drop-text">Toca para elegir una foto o video corto</p>
-        <p class="drop-hint">Foto (hasta 30 MB) · Video corto (hasta 100 MB)</p>
+        <p class="drop-text">Toca para elegir fotos o videos</p>
+        <p class="drop-hint">Múltiples archivos · Foto hasta 30 MB · Video hasta 100 MB</p>
       </div>
 
       <div id="preview-wrap">
@@ -116,16 +116,26 @@
     if (uploadCount > 0) counterEl.textContent = `Has compartido ${uploadCount} archivo${uploadCount > 1 ? 's' : ''} 💛`;
 
     fileInput.addEventListener('change', () => {
-      const file = fileInput.files[0];
-      if (!file) return;
-      const isVideo = file.type.startsWith('video/');
-      const limit   = isVideo ? MAX_VIDEO : MAX_PHOTO;
-      const limitMB = isVideo ? '100 MB' : '30 MB';
-      if (file.size > limit) {
-        setStatus(`⚠ El archivo supera el límite de ${limitMB}.`, 'err');
-        fileInput.value = ''; return;
-      }
-      const url = URL.createObjectURL(file);
+      const files = Array.from(fileInput.files);
+      if (!files.length) return;
+
+      let hasError = false;
+      files.forEach(file => {
+        const isVideo = file.type.startsWith('video/');
+        const limit   = isVideo ? MAX_VIDEO : MAX_PHOTO;
+        const limitMB = isVideo ? '100 MB' : '30 MB';
+        if (file.size > limit) {
+          setStatus(`⚠ "${file.name}" supera el límite de ${limitMB}.`, 'err');
+          hasError = true;
+        }
+      });
+
+      if (hasError) { fileInput.value = ''; return; }
+
+      // Mostrar preview del primero + contador
+      const first   = files[0];
+      const isVideo = first.type.startsWith('video/');
+      const url     = URL.createObjectURL(first);
       if (isVideo) {
         previewImg.style.display = 'none';
         previewVideo.style.display = 'block';
@@ -135,7 +145,10 @@
         previewImg.style.display = 'block';
         previewImg.src = url;
       }
-      previewName.textContent = `${file.name} · ${(file.size/1024/1024).toFixed(1)} MB`;
+      const total = files.reduce((s, f) => s + f.size, 0);
+      previewName.textContent = files.length > 1
+        ? `${files.length} archivos seleccionados · ${(total/1024/1024).toFixed(1)} MB total`
+        : `${first.name} · ${(first.size/1024/1024).toFixed(1)} MB`;
       previewWrap.style.display = 'block';
       uploadBtn.disabled = false;
       setStatus('');
@@ -157,55 +170,60 @@
     function setStatus(msg, type = '') { statusEl.textContent = msg; statusEl.className = type; }
 
     async function uploadPhoto() {
-      const file = fileInput.files[0];
-      if (!file) return;
+      const files = Array.from(fileInput.files);
+      if (!files.length) return;
 
-      const nombre  = (nameInput.value.trim() || 'Invitado').replace(/\s+/g, '_');
-      const isVideo = file.type.startsWith('video/');
-
+      const nombre = (nameInput.value.trim() || 'Invitado').replace(/\s+/g, '_');
       uploadBtn.disabled = true;
-      setStatus(isVideo ? 'Subiendo video… puede tardar ⏳' : 'Subiendo tu recuerdo…');
       progressWrap.style.display = 'block';
-      progressBar.style.width = '15%';
 
-      const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0,14);
-      const prefix    = isVideo ? 'video' : 'foto';
-      const ext       = file.name.split('.').pop().replace(/[^a-zA-Z0-9]/g, '') || 'jpg';
-      const safeName  = `boda_${prefix}_${timestamp}.${ext}`;
+      let subidos = 0;
+      let errores = 0;
 
-      // URL exacta que usa pCloud internamente (capturada del tráfico de red)
-      const url = `${BASE_URL}?code=${UPLOAD_CODE}&names=${encodeURIComponent(nombre)}&filescount=1`;
+      for (let i = 0; i < files.length; i++) {
+        const file    = files[i];
+        const isVideo = file.type.startsWith('video/');
+        setStatus(`Subiendo ${i + 1} de ${files.length}…`);
+        progressBar.style.width = `${Math.round(((i) / files.length) * 90)}%`;
 
-      const form = new FormData();
-      form.append('file', new File([file], safeName, { type: file.type }));
+        const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0,14) + i;
+        const prefix    = isVideo ? 'video' : 'foto';
+        const ext       = file.name.split('.').pop().replace(/[^a-zA-Z0-9]/g, '') || 'jpg';
+        const safeName  = `boda_${prefix}_${timestamp}.${ext}`;
 
-      try {
-        progressBar.style.width = '50%';
-        const res  = await fetch(url, { method: 'POST', body: form });
-        const data = await res.json();
-        progressBar.style.width = '100%';
+        const url  = `${BASE_URL}?code=${UPLOAD_CODE}&names=${encodeURIComponent(nombre)}&filescount=1`;
+        const form = new FormData();
+        form.append('file', new File([file], safeName, { type: file.type }));
 
-        if (data.result === 0) {
-          setStatus('✦ ¡Gracias por compartir este momento! ✦', 'ok');
-          uploadCount++;
-          localStorage.setItem('boda_uploads', uploadCount);
-          counterEl.textContent = `Has compartido ${uploadCount} archivo${uploadCount > 1 ? 's' : ''} 💛`;
-          setTimeout(() => {
-            fileInput.value = '';
-            nameInput.value = '';
-            previewWrap.style.display  = 'none';
-            progressWrap.style.display = 'none';
-            progressBar.style.width    = '0%';
-            uploadBtn.disabled = true;
-            setStatus('');
-          }, 3000);
-        } else {
-          setStatus(`Error ${data.result}: ${data.error || 'inténtalo de nuevo'}`, 'err');
-          uploadBtn.disabled = false;
+        try {
+          const res  = await fetch(url, { method: 'POST', body: form });
+          const data = await res.json();
+          if (data.result === 0) subidos++;
+          else errores++;
+        } catch { errores++; }
+      }
+
+      progressBar.style.width = '100%';
+
+      if (subidos > 0) {
+        uploadCount += subidos;
+        localStorage.setItem('boda_uploads', uploadCount);
+        counterEl.textContent = `Has compartido ${uploadCount} archivo${uploadCount > 1 ? 's' : ''} 💛`;
+        const msg = errores > 0
+          ? `✦ ${subidos} subido${subidos>1?'s':''}, ${errores} con error ✦`
+          : `✦ ¡${subidos} archivo${subidos>1?'s':''} compartido${subidos>1?'s':''}! ¡Gracias! ✦`;
+        setStatus(msg, 'ok');
+        setTimeout(() => {
+          fileInput.value = '';
+          nameInput.value = '';
+          previewWrap.style.display  = 'none';
           progressWrap.style.display = 'none';
-        }
-      } catch (e) {
-        setStatus('Error de conexión. Verifica tu red.', 'err');
+          progressBar.style.width    = '0%';
+          uploadBtn.disabled = true;
+          setStatus('');
+        }, 3000);
+      } else {
+        setStatus('No se pudo subir ningún archivo. Inténtalo de nuevo.', 'err');
         uploadBtn.disabled = false;
         progressWrap.style.display = 'none';
       }
