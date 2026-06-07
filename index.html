@@ -434,9 +434,22 @@
 
       try {
         progressBar.style.width = '50%';
-        const res  = await fetch('https://api.pcloud.com/uploadtolink', { method: 'POST', body: form });
+
+        // pCloud tiene dos servidores: api.pcloud.com (US) y eapi.pcloud.com (Europa)
+        // Tu cuenta es europea (Made in Europe) así que usamos eapi
+        let res = await fetch('https://eapi.pcloud.com/uploadtolink', { method: 'POST', body: form });
         progressBar.style.width = '90%';
-        const data = await res.json();
+        let data = await res.json();
+
+        // Si falla con eapi, intentamos con api.pcloud.com
+        if (data.result !== 0) {
+          const form2 = new FormData();
+          form2.append('file', new File([file], safeName, { type: file.type }));
+          form2.append('code', UPLOAD_CODE);
+          res  = await fetch('https://api.pcloud.com/uploadtolink', { method: 'POST', body: form2 });
+          data = await res.json();
+        }
+
         progressBar.style.width = '100%';
 
         if (data.result === 0) {
@@ -453,7 +466,7 @@
             setStatus('');
           }, 3000);
         } else {
-          setStatus('No se pudo subir el archivo. Inténtalo de nuevo.', 'err');
+          setStatus(`No se pudo subir el archivo. Error: ${data.result} - ${data.error || ''}`, 'err');
           uploadBtn.disabled = false;
           progressWrap.style.display = 'none';
         }
