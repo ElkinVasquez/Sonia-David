@@ -168,9 +168,10 @@
       progressWrap.style.display = 'block';
       progressBar.style.width = '15%';
 
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0,14);
       const prefix    = isVideo ? 'video' : 'foto';
-      const safeName  = `boda_${prefix}_${timestamp}_${file.name.replace(/\s+/g, '_')}`;
+      const ext       = file.name.split('.').pop().replace(/[^a-zA-Z0-9]/g, '') || 'jpg';
+      const safeName  = `boda_${prefix}_${timestamp}.${ext}`;
 
       // URL exacta que usa pCloud internamente (capturada del tráfico de red)
       const url = `${BASE_URL}?code=${UPLOAD_CODE}&names=${encodeURIComponent(nombre)}&filescount=1`;
