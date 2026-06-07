@@ -1699,6 +1699,36 @@ Sube a GitHub, prueba y dime si ahora los archivos llegan directamente a Sonia&D
 
 Sonia david boda
 Código · HTML 
+1780874324218_image.png
+sigue subiendo por separados:
+
+1:20
+Veo que pCloud siempre crea subcarpetas con el método uploadtolink — es el comportamiento nativo que no podemos cambiar desde la API.
+
+La solución es cambiar la estrategia: en lugar de luchar contra pCloud, borramos las carpetas anteriores y usamos un nombre fijo para que todas las fotos queden en la misma carpeta por invitado. O mejor aún — aceptamos las subcarpetas pero las hacemos más útiles.
+
+Pero primero déjame ver exactamente qué URL está usando pCloud cuando funciona bien desde su propia página:
+
+
+Archivo editado, leyó un archivo
+Archivo editado, leyó un archivo
+Sube a GitHub y prueba. Pero te digo la verdad: pCloud crea subcarpetas por diseño en el método "Solicitar archivos" — es su comportamiento nativo e inmutable desde la API.
+
+La realidad del sistema
+Lo que pCloud hace	No se puede cambiar
+Crea "N files from Nombre on fecha"	✅ Siempre
+Agrupa por sesión de subida	✅ Siempre
+Mi recomendación honesta
+Acepta las subcarpetas — en realidad es muy útil para una boda:
+
+Sabes exactamente quién subió qué (from EVI, from María)
+Sabes cuándo lo subieron
+Es fácil navegar por invitado
+La alternativa sería montar un backend propio (Node.js/Vercel Function) con el token de pCloud que suba directo con uploadfile a la raíz — pero requiere más trabajo. ¿Quieres que lo hagamos así? 🎊
+
+
+Sonia david boda
+Código · HTML 
 
 
 
@@ -1884,27 +1914,29 @@ Sonia david boda · HTML
       const files = Array.from(fileInput.files);
       if (!files.length) return;
  
-      const nombre = (nameInput.value.trim() || 'Invitado').replace(/\s+/g, '_');
+      const nombre = (nameInput.value.trim() || 'Invitado').replace(/[^a-zA-Z0-9]/g, '');
       uploadBtn.disabled = true;
       progressWrap.style.display = 'block';
-      progressBar.style.width = '15%';
       setStatus(`Subiendo ${files.length} archivo${files.length > 1 ? 's' : ''}…`);
  
-      // Subir TODOS los archivos en una sola llamada → pCloud no crea subcarpetas
-      const url  = `${BASE_URL}?code=${UPLOAD_CODE}&names=${encodeURIComponent(nombre)}&filescount=${files.length}`;
+      // pCloud siempre crea una subcarpeta por llamada — subimos todo en un FormData
+      // con nopartial=1 para asegurar que se completen
+      const ts   = new Date().toISOString().replace(/[^0-9]/g, '').slice(0,14);
+      const url  = `${BASE_URL}?code=${UPLOAD_CODE}&nopartial=1`;
       const form = new FormData();
  
       files.forEach((file, i) => {
-        const isVideo   = file.type.startsWith('video/');
-        const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0,14) + i;
-        const prefix    = isVideo ? 'video' : 'foto';
-        const ext       = file.name.split('.').pop().replace(/[^a-zA-Z0-9]/g, '') || 'jpg';
-        const safeName  = `boda_${prefix}_${timestamp}.${ext}`;
+        const isVideo = file.type.startsWith('video/');
+        const prefix  = isVideo ? 'video' : 'foto';
+        const ext     = file.name.split('.').pop().replace(/[^a-zA-Z0-9]/g, '') || 'jpg';
+        // Nombre: NombreInvitado_foto_timestamp_i.jpg
+        const safeName = `${nombre}_${prefix}_${ts}_${i}.${ext}`;
         form.append('file', new File([file], safeName, { type: file.type }));
       });
  
+      progressBar.style.width = '50%';
+ 
       try {
-        progressBar.style.width = '60%';
         const res  = await fetch(url, { method: 'POST', body: form });
         const data = await res.json();
         progressBar.style.width = '100%';
