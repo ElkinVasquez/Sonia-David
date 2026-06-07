@@ -181,7 +181,8 @@
       // pCloud siempre crea una subcarpeta por llamada — subimos todo en un FormData
       // con nopartial=1 para asegurar que se completen
       const ts   = new Date().toISOString().replace(/[^0-9]/g, '').slice(0,14);
-      const url  = `${BASE_URL}?code=${UPLOAD_CODE}&nopartial=1`;
+      // names y filescount son requeridos por pCloud para uploadtolink
+      const url  = `${BASE_URL}?code=${UPLOAD_CODE}&names=${encodeURIComponent(nombre)}&filescount=${files.length}&nopartial=1`;
       const form = new FormData();
 
       files.forEach((file, i) => {
